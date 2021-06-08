@@ -1,0 +1,10 @@
+---
+- name: Remove errorpages.toml file from Traefik
+  ansible.builtin.file:
+    path: "{{ traefik_data_dir }}/rules/errorpages.toml"
+    state: absent
+
+- name: Stop "{{ errorpages_name }}" container
+  community.docker.docker_container:
+    name: "{{ errorpages_name }}"
+    state: absent

@@ -1,0 +1,29 @@
+---
+- name: Add errorpages.toml file to Traefik
+  ansible.builtin.template:
+    src: errorpages.toml.j2
+    dest: "{{ traefik_data_dir }}/rules/errorpages.toml"
+
+- name: Start "{{ errorpages_name }}" container
+  community.docker.docker_container:
+    name: "{{ errorpages_name }}"
+    image: "tarampampam/error-pages:{{ errorpages_version }}"
+    restart_policy: "{{ errorpages_restart_policy }}"
+    recreate: "{{ errorpages_recreate }}"
+    pull: "true"
+    env:
+      TEMPLATE_NAME: "{{ errorpages_template_name }}"
+    networks:
+      - name: "{{ errorpages_network_mode }}"
+    purge_networks: "true"
+    networks_cli_compatible: "true"
+    labels:
+      traefik.enable: "{{ errorpages_available_externally }}"
+      ## HTTP Routers
+      traefik.http.routers.errorpages-rtr.entrypoints: https
+      traefik.http.routers.errorpages-rtr.rule: PathPrefix(`/`)
+      ## Middlewares
+      traefik.http.routers.errorpages-rtr.middlewares: chain-no-auth@file
+      ## HTTP Services
+      traefik.http.routers.errorpages-rtr.service: errorpages-svc
+      traefik.http.services.errorpages-svc.loadbalancer.server.port: "{{ errorpages_port }}"
